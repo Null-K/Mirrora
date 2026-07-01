@@ -1,4 +1,4 @@
-# Mirrora
+# Mirrora [English](README_EN.md)
 
 在 Minecraft 服务器里创建真实的镜子，玩家站到镜子前，能看到自己（以及其他所有在场玩家）的实时镜像，包括姿态、装备、朝向和挥手动作。
 
