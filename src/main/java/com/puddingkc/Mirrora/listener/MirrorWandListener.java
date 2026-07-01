@@ -2,10 +2,9 @@ package com.puddingkc.Mirrora.listener;
 
 import com.puddingkc.Mirrora.manager.SelectionManager;
 import com.puddingkc.Mirrora.model.MirrorSelection;
+import com.puddingkc.Mirrora.util.Messages;
 import com.puddingkc.Mirrora.util.ReflectionMath;
 import com.puddingkc.Mirrora.util.WandItemFactory;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
@@ -41,26 +40,21 @@ public record MirrorWandListener(WandItemFactory wandItemFactory,
         event.setCancelled(true);
 
         if (!ReflectionMath.isHorizontal(face)) {
-            event.getPlayer().sendMessage(Component.text("请点击垂直的墙面 (不能是地面或天花板)", NamedTextColor.RED));
+            Messages.error(event.getPlayer(), "请点击垂直的墙面 (不能是地面或天花板)");
             return;
         }
 
         MirrorSelection selection = selectionManager.getOrCreate(event.getPlayer().getUniqueId());
         if (action == Action.LEFT_CLICK_BLOCK) {
             selection.setPos1(block, face);
-            event.getPlayer().sendMessage(Component.text(
-                    "已选取第一个点: " + describe(block) + "，朝向: " + face,
-                    NamedTextColor.GREEN));
+            Messages.success(event.getPlayer(), "已选取第一个点: <#cee2f0><arg1></#cee2f0>，朝向: <#cee2f0><arg2></#cee2f0>", describe(block), face);
         } else {
             selection.setPos2(block, face);
-            event.getPlayer().sendMessage(Component.text(
-                    "已选取第二个点: " + describe(block) + "，朝向: " + face,
-                    NamedTextColor.GREEN));
+            Messages.success(event.getPlayer(), "已选取第二个点: <#cee2f0><arg1></#cee2f0>，朝向: <#cee2f0><arg2></#cee2f0>", describe(block), face);
         }
 
         if (selection.isComplete() && !selection.isFaceConsistent()) {
-            event.getPlayer().sendMessage(Component.text(
-                    "两个选点的朝向不一致，请确保两点都在同一面墙上", NamedTextColor.RED));
+            Messages.error(event.getPlayer(), "两个选点的朝向不一致，请确保两点都在同一面墙上");
         }
     }
 

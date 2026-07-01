@@ -32,6 +32,8 @@ public class Mirrora extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new MirrorAnimationListener(mirrorManager), this);
         getServer().getPluginManager().registerEvents(new MirrorWandListener(wandItemFactory, selectionManager), this);
+
+        getLogger().info("Author: PuddingKC");
     }
 
     @Override

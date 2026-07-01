@@ -4,9 +4,8 @@ import com.puddingkc.Mirrora.manager.MirrorManager;
 import com.puddingkc.Mirrora.manager.SelectionManager;
 import com.puddingkc.Mirrora.model.MirrorRegion;
 import com.puddingkc.Mirrora.model.MirrorSelection;
+import com.puddingkc.Mirrora.util.Messages;
 import com.puddingkc.Mirrora.util.WandItemFactory;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
@@ -25,11 +24,12 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
 
     private static final double DEFAULT_DEPTH = 8.0;
     private static final double MAX_DEPTH = 32.0;
+    private static final String USAGE = "正确命令: <#cee2f0>/mirror [wand|create|remove|list]";
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(Component.text("正确命令: /mirror <wand|create|remove|list>", NamedTextColor.YELLOW));
+            Messages.warn(sender, USAGE);
             return true;
         }
 
@@ -38,34 +38,34 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
             case "create" -> handleCreate(sender, args);
             case "remove" -> handleRemove(sender, args);
             case "list" -> handleList(sender);
-            default -> sender.sendMessage(Component.text("正确命令: /mirror <wand|create|remove|list>", NamedTextColor.YELLOW));
+            default -> Messages.warn(sender, USAGE);
         }
         return true;
     }
 
     private void handleWand(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("该命令只能由玩家执行", NamedTextColor.RED));
+            Messages.error(sender, "该命令只能由玩家执行");
             return;
         }
         player.getInventory().addItem(wandItemFactory.create());
         selectionManager.clear(player.getUniqueId());
-        player.sendMessage(Component.text("已获得镜子选区工具，左键选择点 1，右键选择点 2", NamedTextColor.GREEN));
+        Messages.success(player, "已获得镜子选区工具，<#cee2f0>左键</#cee2f0>选择点 1，<#cee2f0>右键</#cee2f0>选择点 2");
     }
 
     private void handleCreate(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("该命令只能由玩家执行", NamedTextColor.RED));
+            Messages.error(sender, "该命令只能由玩家执行");
             return;
         }
         if (args.length < 2) {
-            player.sendMessage(Component.text("正确命令: /mirror create <id> [深度]", NamedTextColor.YELLOW));
+            Messages.warn(player, "正确命令: <#cee2f0>/mirror create <id> [深度]");
             return;
         }
 
         String id = args[1];
         if (mirrorManager.findRegion(id) != null) {
-            player.sendMessage(Component.text("已存在同名镜子: " + id, NamedTextColor.RED));
+            Messages.error(player, "已存在同名镜子: <#cee2f0><arg>", id);
             return;
         }
 
@@ -74,36 +74,36 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
             try {
                 depth = Double.parseDouble(args[2]);
             } catch (NumberFormatException e) {
-                player.sendMessage(Component.text("深度必须是一个正数", NamedTextColor.RED));
+                Messages.error(player, "深度必须是一个正数");
                 return;
             }
             if (depth <= 0 || depth > MAX_DEPTH) {
-                player.sendMessage(Component.text("深度必须在 0 到 " + MAX_DEPTH + " 之间", NamedTextColor.RED));
+                Messages.error(player, "深度必须在 <#cee2f0>0</#cee2f0> 到 <#cee2f0><arg></#cee2f0> 之间", MAX_DEPTH);
                 return;
             }
         }
 
         MirrorSelection selection = selectionManager.get(player.getUniqueId());
         if (selection == null || !selection.isComplete()) {
-            player.sendMessage(Component.text("请先用工具选取两个点 (/mirror wand)", NamedTextColor.RED));
+            Messages.error(player, "请先用工具选取两个点 (<#cee2f0>/mirror wand</#cee2f0>)");
             return;
         }
         if (!selection.isFaceConsistent()) {
-            player.sendMessage(Component.text("两个选点的朝向不一致，请重新选取", NamedTextColor.RED));
+            Messages.error(player, "两个选点的朝向不一致，请重新选取");
             return;
         }
 
         MirrorRegion region = buildRegion(id, selection, depth);
         if (region == null) {
-            player.sendMessage(Component.text("创建失败，两个选点必须在同一个世界", NamedTextColor.RED));
+            Messages.error(player, "创建失败，两个选点必须在同一个世界");
             return;
         }
 
         if (mirrorManager.createRegion(region)) {
-            player.sendMessage(Component.text("镜子 '" + id + "' 创建成功", NamedTextColor.GREEN));
+            Messages.success(player, "镜子 <#cee2f0><arg></#cee2f0> 创建成功", id);
             selectionManager.clear(player.getUniqueId());
         } else {
-            player.sendMessage(Component.text("已存在同名镜子: " + id, NamedTextColor.RED));
+            Messages.error(player, "已存在同名镜子: <#cee2f0><arg>", id);
         }
     }
 
@@ -143,26 +143,26 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
 
     private void handleRemove(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(Component.text("正确命令: /mirror remove <id>", NamedTextColor.YELLOW));
+            Messages.warn(sender, "正确命令: <#cee2f0>/mirror remove <id>");
             return;
         }
         if (mirrorManager.removeRegion(args[1])) {
-            sender.sendMessage(Component.text("镜子 '" + args[1] + "' 已移除", NamedTextColor.GREEN));
+            Messages.success(sender, "镜子 <#cee2f0><arg></#cee2f0> 已移除", args[1]);
         } else {
-            sender.sendMessage(Component.text("找不到镜子: " + args[1], NamedTextColor.RED));
+            Messages.error(sender, "找不到镜子: <#cee2f0><arg>", args[1]);
         }
     }
 
     private void handleList(CommandSender sender) {
         List<MirrorRegion> regions = mirrorManager.getRegions();
         if (regions.isEmpty()) {
-            sender.sendMessage(Component.text("当前没有任何镜子", NamedTextColor.YELLOW));
+            Messages.warn(sender, "当前没有任何镜子");
             return;
         }
-        sender.sendMessage(Component.text("共有 " + regions.size() + " 面镜子:", NamedTextColor.AQUA));
+        Messages.info(sender, "共有 <#cee2f0><arg></#cee2f0> 面镜子:", regions.size());
         for (MirrorRegion region : regions) {
-            sender.sendMessage(Component.text(" - " + region.id() + " @ " + region.worldName()
-                    + " (" + region.face() + "，深度 " + region.depth() + ")", NamedTextColor.GRAY));
+            Messages.info(sender, " - <#cee2f0><arg1></#cee2f0> @ <arg2> (<arg3>，深度 <arg4>)",
+                    region.id(), region.worldName(), region.face(), region.depth());
         }
     }
 
