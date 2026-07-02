@@ -1,6 +1,6 @@
 main: com.puddingkc.Mirrora.Mirrora
 name: Mirrora
-version: 1.1.0
+version: 1.1.1
 api-version: "1.21"
 author: PuddingKC
 depend: [ "packetevents" ]
