@@ -15,6 +15,12 @@ public class ReflectionState {
     private org.bukkit.inventory.ItemStack[] lastEquipmentSnapshot;
     private boolean everSpawned = false;
 
+    private double lastX = Double.NaN;
+    private double lastY = Double.NaN;
+    private double lastZ = Double.NaN;
+    private float lastYaw = Float.NaN;
+    private float lastPitch = Float.NaN;
+
     public ReflectionState(int fakeEntityId, UUID fakeEntityUuid) {
         this.fakeEntityId = fakeEntityId;
         this.fakeEntityUuid = fakeEntityUuid;
@@ -74,5 +80,23 @@ public class ReflectionState {
 
     public void markSpawned() {
         this.everSpawned = true;
+    }
+
+    public boolean isPositionKnown() {
+        return !Double.isNaN(lastX);
+    }
+
+    public double getLastX() { return lastX; }
+    public double getLastY() { return lastY; }
+    public double getLastZ() { return lastZ; }
+    public float getLastYaw() { return lastYaw; }
+    public float getLastPitch() { return lastPitch; }
+
+    public void updatePosition(double x, double y, double z, float yaw, float pitch) {
+        this.lastX = x;
+        this.lastY = y;
+        this.lastZ = z;
+        this.lastYaw = yaw;
+        this.lastPitch = pitch;
     }
 }

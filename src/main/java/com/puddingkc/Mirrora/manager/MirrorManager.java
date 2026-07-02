@@ -243,6 +243,9 @@ public class MirrorManager {
         sendEquipment(observer, reflected, state, true);
     }
 
+    private static final double POS_EPSILON = 1e-4;
+    private static final float ROT_EPSILON = 0.1f;
+
     private void updateReflection(Player observer, MirrorRegion region, UUID reflectedId, ReflectionState state) {
         Player reflected = plugin.getServer().getPlayer(reflectedId);
         if (reflected == null || !reflected.isOnline()) {
@@ -252,19 +255,25 @@ public class MirrorManager {
         PlayerManager playerManager = PacketEvents.getAPI().getPlayerManager();
         ReflectedTransform transform = computeReflectedTransform(region, reflected.getLocation());
 
-        WrapperPlayServerEntityTeleport teleport = new WrapperPlayServerEntityTeleport(
-                state.getFakeEntityId(),
-                transform.position,
-                transform.yaw,
-                transform.pitch,
-                true
-        );
-        playerManager.sendPacket(observer, teleport);
+        boolean moved = !state.isPositionKnown()
+                || Math.abs(transform.position().getX() - state.getLastX()) > POS_EPSILON
+                || Math.abs(transform.position().getY() - state.getLastY()) > POS_EPSILON
+                || Math.abs(transform.position().getZ() - state.getLastZ()) > POS_EPSILON
+                || Math.abs(transform.yaw() - state.getLastYaw()) > ROT_EPSILON
+                || Math.abs(transform.pitch() - state.getLastPitch()) > ROT_EPSILON;
 
-        WrapperPlayServerEntityHeadLook headLook = new WrapperPlayServerEntityHeadLook(
-                state.getFakeEntityId(), transform.yaw
-        );
-        playerManager.sendPacket(observer, headLook);
+        if (moved) {
+            playerManager.sendPacket(observer, new WrapperPlayServerEntityTeleport(
+                    state.getFakeEntityId(), transform.position(), transform.yaw(), transform.pitch(), true
+            ));
+            playerManager.sendPacket(observer, new WrapperPlayServerEntityHeadLook(
+                    state.getFakeEntityId(), transform.yaw()
+            ));
+            state.updatePosition(
+                    transform.position().getX(), transform.position().getY(), transform.position().getZ(),
+                    transform.yaw(), transform.pitch()
+            );
+        }
 
         sendChangedMetadata(observer, reflected, state);
         sendEquipment(observer, reflected, state, false);
