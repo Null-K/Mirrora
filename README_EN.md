@@ -1,4 +1,4 @@
-# Mirrora [简体中文](README.md)
+# Mirrora [[简体中文]](README.md)
 
 Create realistic mirrors in Minecraft servers. Players standing in front
 of the mirror can see their own real-time reflection (as well as all
@@ -25,6 +25,27 @@ as the reflection carrier.
 Using [packetevents](https://github.com/retrooper/packetevents), entity
 packets are directly sent to clients. No real entities are created on
 the server, and no resource packs or client mods are required.
+
+## Configuration
+
+```yaml
+# Language
+language: en_us
+
+mirror:
+  # Default mirror depth (in blocks) when no depth is specified during creation
+  default-depth: 8.0
+
+  # Maximum allowed mirror depth (in blocks)
+  max-depth: 32.0
+
+  # Reflection update interval (in ticks). Lower values provide smoother reflections but increase performance cost.
+  tick-interval: 1
+
+wand:
+  # Material used for the region selection wand
+  material: BLAZE_ROD
+```
 
 ## Dependencies
 

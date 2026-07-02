@@ -1,4 +1,4 @@
-# Mirrora [English](README_EN.md)
+# Mirrora [[English]](README_EN.md)
 
 在 Minecraft 服务器里创建真实的镜子，玩家站到镜子前，能看到自己（以及其他所有在场玩家）的实时镜像，包括姿态、装备、朝向和挥手动作。
 
@@ -21,6 +21,27 @@
 利用 1.21.9+ 新增的 `mannequin` 实体作为镜像载体，通过 [packetevents](https://github.com/retrooper/packetevents) 直接向客户端发送实体数据包，不在服务端创建任何真实实体，也不依赖客户端资源包或模组。
 
 镜像的坐标是玩家位置关于镜面所在平面做反射计算得出的，只反转垂直于墙面的那个水平坐标轴，朝向做镜像翻转，姿态和装备直接复制。
+
+## 配置
+
+```yaml
+# 语言
+language: zh_cn
+
+mirror:
+  # 创建镜子时未指定深度时使用的默认值（格）
+  default-depth: 8.0
+
+  # 深度允许设置的最大值（格）
+  max-depth: 32.0
+
+  # 反射刷新间隔（tick），数值越小越流畅，但开销越大
+  tick-interval: 1
+
+wand:
+  # 选区工具使用的物品材质
+  material: BLAZE_ROD
+```
 
 ## 依赖
 
