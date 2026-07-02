@@ -1,5 +1,5 @@
 command:
-  usage: "Usage: <#cee2f0>/mirror [wand|create|remove|list]"
+  usage: "Usage: <#cee2f0>/mirror [wand|create|remove|list|reload]"
   player-only: "This command can only be used by a player"
   wand:
     success: "You received the mirror selection wand, <#cee2f0>left-click</#cee2f0> to set point 1, <#cee2f0>right-click</#cee2f0> to set point 2"
@@ -20,6 +20,8 @@ command:
     empty: "There are no mirrors yet"
     header: "There are <#cee2f0><arg></#cee2f0> mirror(s):"
     entry: " - <#cee2f0><arg1></#cee2f0> @ <arg2> (<arg3>, depth <arg4>)"
+  reload:
+    success: "Configuration and language files reloaded"
 
 wand-listener:
   invalid-face: "Please click a vertical wall (not the floor or ceiling)"

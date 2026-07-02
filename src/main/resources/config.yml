@@ -1,14 +1,21 @@
 # 语言
+# Language
 language: zh_cn
 
 mirror:
   # 创建镜子时未指定深度时使用的默认值（格）
+  # Default mirror depth (in blocks) when no depth is specified during creation
   default-depth: 8.0
+
   # 深度允许设置的最大值（格）
+  # Maximum allowed mirror depth (in blocks)
   max-depth: 32.0
+
   # 反射刷新间隔（tick），数值越小越流畅，但开销越大
+  # Reflection update interval (in ticks). Lower values provide smoother reflections but increase performance cost.
   tick-interval: 1
 
 wand:
   # 选区工具使用的物品材质
+  # Material used for the region selection wand
   material: BLAZE_ROD

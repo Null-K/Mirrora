@@ -1,5 +1,5 @@
 command:
-  usage: "正确命令: <#cee2f0>/mirror [wand|create|remove|list]"
+  usage: "正确命令: <#cee2f0>/mirror [wand|create|remove|list|reload]"
   player-only: "该命令只能由玩家执行"
   wand:
     success: "已获得镜子选区工具，<#cee2f0>左键</#cee2f0>选择点 1，<#cee2f0>右键</#cee2f0>选择点 2"
@@ -20,6 +20,8 @@ command:
     empty: "当前没有任何镜子"
     header: "共有 <#cee2f0><arg></#cee2f0> 面镜子:"
     entry: " - <#cee2f0><arg1></#cee2f0> @ <arg2> (<arg3>，深度 <arg4>)"
+  reload:
+    success: "配置与语言文件已重新加载"
 
 wand-listener:
   invalid-face: "请点击垂直的墙面 (不能是地面或天花板)"

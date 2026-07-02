@@ -35,7 +35,7 @@ public class Mirrora extends JavaPlugin {
         SelectionManager selectionManager = new SelectionManager();
         WandItemFactory wandItemFactory = new WandItemFactory(this, wandMaterial);
 
-        MirrorCommand mirrorCommand = new MirrorCommand(mirrorManager, selectionManager, wandItemFactory, defaultDepth, maxDepth);
+        MirrorCommand mirrorCommand = new MirrorCommand(this, mirrorManager, selectionManager, wandItemFactory, defaultDepth, maxDepth);
         var command = getCommand("mirror");
         if (command != null) {
             command.setExecutor(mirrorCommand);

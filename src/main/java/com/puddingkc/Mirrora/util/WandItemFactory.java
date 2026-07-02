@@ -15,12 +15,16 @@ import java.util.List;
 
 public final class WandItemFactory {
 
-    private final Material wandMaterial;
+    private Material wandMaterial;
     private final NamespacedKey wandKey;
 
     public WandItemFactory(Plugin plugin, Material wandMaterial) {
         this.wandMaterial = wandMaterial;
         this.wandKey = new NamespacedKey(plugin, "mirror_wand");
+    }
+
+    public void setWandMaterial(Material wandMaterial) {
+        this.wandMaterial = wandMaterial;
     }
 
     public ItemStack create() {

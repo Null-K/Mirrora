@@ -7,6 +7,7 @@ import com.puddingkc.Mirrora.model.MirrorSelection;
 import com.puddingkc.Mirrora.util.Lang;
 import com.puddingkc.Mirrora.util.Messages;
 import com.puddingkc.Mirrora.util.WandItemFactory;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
@@ -14,15 +15,32 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-public record MirrorCommand(MirrorManager mirrorManager, SelectionManager selectionManager,
-                            WandItemFactory wandItemFactory, double defaultDepth,
-                            double maxDepth) implements CommandExecutor, TabCompleter {
+public final class MirrorCommand implements CommandExecutor, TabCompleter {
+
+    private final JavaPlugin plugin;
+    private final MirrorManager mirrorManager;
+    private final SelectionManager selectionManager;
+    private final WandItemFactory wandItemFactory;
+
+    private double defaultDepth;
+    private double maxDepth;
+
+    public MirrorCommand(JavaPlugin plugin, MirrorManager mirrorManager, SelectionManager selectionManager,
+                          WandItemFactory wandItemFactory, double defaultDepth, double maxDepth) {
+        this.plugin = plugin;
+        this.mirrorManager = mirrorManager;
+        this.selectionManager = selectionManager;
+        this.wandItemFactory = wandItemFactory;
+        this.defaultDepth = defaultDepth;
+        this.maxDepth = maxDepth;
+    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
@@ -40,9 +58,29 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
             case "create" -> handleCreate(sender, args);
             case "remove" -> handleRemove(sender, args);
             case "list" -> handleList(sender);
+            case "reload" -> handleReload(sender);
             default -> Messages.warn(sender, Lang.get("command.usage"));
         }
         return true;
+    }
+
+    private void handleReload(CommandSender sender) {
+        plugin.reloadConfig();
+        Lang.init(plugin);
+
+        defaultDepth = plugin.getConfig().getDouble("mirror.default-depth", 8.0);
+        maxDepth = plugin.getConfig().getDouble("mirror.max-depth", 32.0);
+        long tickInterval = Math.max(1, plugin.getConfig().getLong("mirror.tick-interval", 1));
+        mirrorManager.setTickInterval(tickInterval);
+
+        Material wandMaterial = Material.matchMaterial(plugin.getConfig().getString("wand.material", "BLAZE_ROD"));
+        if (wandMaterial == null) {
+            plugin.getLogger().warning("The configured wand.material is invalid. Falling back to BLAZE_ROD");
+            wandMaterial = Material.BLAZE_ROD;
+        }
+        wandItemFactory.setWandMaterial(wandMaterial);
+
+        Messages.success(sender, Lang.get("command.reload.success"));
     }
 
     private void handleWand(CommandSender sender) {
@@ -172,7 +210,7 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            for (String sub : new String[]{"wand", "create", "remove", "list"}) {
+            for (String sub : new String[]{"wand", "create", "remove", "list", "reload"}) {
                 if (sub.startsWith(args[0].toLowerCase())) {
                     options.add(sub);
                 }

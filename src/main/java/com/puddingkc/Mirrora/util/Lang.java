@@ -21,8 +21,8 @@ public final class Lang {
 
     public static void init(JavaPlugin plugin) {
         plugin.saveDefaultConfig();
-        plugin.saveResource("lang/zh_cn.yml", false);
-        plugin.saveResource("lang/en_us.yml", false);
+        saveResourceIfMissing(plugin, "lang/zh_cn.yml");
+        saveResourceIfMissing(plugin, "lang/en_us.yml");
 
         String language = plugin.getConfig().getString("language", DEFAULT_LANGUAGE);
 
@@ -49,5 +49,12 @@ public final class Lang {
             return path;
         }
         return messages.getString(path, path);
+    }
+
+    private static void saveResourceIfMissing(JavaPlugin plugin, String resourcePath) {
+        File target = new File(plugin.getDataFolder(), resourcePath);
+        if (!target.exists()) {
+            plugin.saveResource(resourcePath, false);
+        }
     }
 }
