@@ -4,6 +4,7 @@ import com.puddingkc.Mirrora.manager.MirrorManager;
 import com.puddingkc.Mirrora.manager.SelectionManager;
 import com.puddingkc.Mirrora.model.MirrorRegion;
 import com.puddingkc.Mirrora.model.MirrorSelection;
+import com.puddingkc.Mirrora.util.Lang;
 import com.puddingkc.Mirrora.util.Messages;
 import com.puddingkc.Mirrora.util.WandItemFactory;
 import org.bukkit.block.Block;
@@ -20,16 +21,17 @@ import java.util.List;
 
 
 public record MirrorCommand(MirrorManager mirrorManager, SelectionManager selectionManager,
-                            WandItemFactory wandItemFactory) implements CommandExecutor, TabCompleter {
-
-    private static final double DEFAULT_DEPTH = 8.0;
-    private static final double MAX_DEPTH = 32.0;
-    private static final String USAGE = "正确命令: <#cee2f0>/mirror [wand|create|remove|list]";
+                            WandItemFactory wandItemFactory, double defaultDepth,
+                            double maxDepth) implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        if (!sender.hasPermission("mirrora.admin")) {
+            return false;
+        }
+
         if (args.length == 0) {
-            Messages.warn(sender, USAGE);
+            Messages.warn(sender, Lang.get("command.usage"));
             return true;
         }
 
@@ -38,72 +40,72 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
             case "create" -> handleCreate(sender, args);
             case "remove" -> handleRemove(sender, args);
             case "list" -> handleList(sender);
-            default -> Messages.warn(sender, USAGE);
+            default -> Messages.warn(sender, Lang.get("command.usage"));
         }
         return true;
     }
 
     private void handleWand(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            Messages.error(sender, "该命令只能由玩家执行");
+            Messages.error(sender, Lang.get("command.player-only"));
             return;
         }
         player.getInventory().addItem(wandItemFactory.create());
         selectionManager.clear(player.getUniqueId());
-        Messages.success(player, "已获得镜子选区工具，<#cee2f0>左键</#cee2f0>选择点 1，<#cee2f0>右键</#cee2f0>选择点 2");
+        Messages.success(player, Lang.get("command.wand.success"));
     }
 
     private void handleCreate(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            Messages.error(sender, "该命令只能由玩家执行");
+            Messages.error(sender, Lang.get("command.player-only"));
             return;
         }
         if (args.length < 2) {
-            Messages.warn(player, "正确命令: <#cee2f0>/mirror create <id> [深度]");
+            Messages.warn(player, Lang.get("command.create.usage"));
             return;
         }
 
         String id = args[1];
         if (mirrorManager.findRegion(id) != null) {
-            Messages.error(player, "已存在同名镜子: <#cee2f0><arg>", id);
+            Messages.error(player, Lang.get("command.create.duplicate"), id);
             return;
         }
 
-        double depth = DEFAULT_DEPTH;
+        double depth = defaultDepth;
         if (args.length >= 3) {
             try {
                 depth = Double.parseDouble(args[2]);
             } catch (NumberFormatException e) {
-                Messages.error(player, "深度必须是一个正数");
+                Messages.error(player, Lang.get("command.create.invalid-depth"));
                 return;
             }
-            if (depth <= 0 || depth > MAX_DEPTH) {
-                Messages.error(player, "深度必须在 <#cee2f0>0</#cee2f0> 到 <#cee2f0><arg></#cee2f0> 之间", MAX_DEPTH);
+            if (depth <= 0 || depth > maxDepth) {
+                Messages.error(player, Lang.get("command.create.depth-range"), maxDepth);
                 return;
             }
         }
 
         MirrorSelection selection = selectionManager.get(player.getUniqueId());
         if (selection == null || !selection.isComplete()) {
-            Messages.error(player, "请先用工具选取两个点 (<#cee2f0>/mirror wand</#cee2f0>)");
+            Messages.error(player, Lang.get("command.create.no-selection"));
             return;
         }
         if (!selection.isFaceConsistent()) {
-            Messages.error(player, "两个选点的朝向不一致，请重新选取");
+            Messages.error(player, Lang.get("command.create.face-mismatch"));
             return;
         }
 
         MirrorRegion region = buildRegion(id, selection, depth);
         if (region == null) {
-            Messages.error(player, "创建失败，两个选点必须在同一个世界");
+            Messages.error(player, Lang.get("command.create.different-world"));
             return;
         }
 
         if (mirrorManager.createRegion(region)) {
-            Messages.success(player, "镜子 <#cee2f0><arg></#cee2f0> 创建成功", id);
+            Messages.success(player, Lang.get("command.create.success"), id);
             selectionManager.clear(player.getUniqueId());
         } else {
-            Messages.error(player, "已存在同名镜子: <#cee2f0><arg>", id);
+            Messages.error(player, Lang.get("command.create.duplicate"), id);
         }
     }
 
@@ -143,25 +145,25 @@ public record MirrorCommand(MirrorManager mirrorManager, SelectionManager select
 
     private void handleRemove(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            Messages.warn(sender, "正确命令: <#cee2f0>/mirror remove <id>");
+            Messages.warn(sender, Lang.get("command.remove.usage"));
             return;
         }
         if (mirrorManager.removeRegion(args[1])) {
-            Messages.success(sender, "镜子 <#cee2f0><arg></#cee2f0> 已移除", args[1]);
+            Messages.success(sender, Lang.get("command.remove.success"), args[1]);
         } else {
-            Messages.error(sender, "找不到镜子: <#cee2f0><arg>", args[1]);
+            Messages.error(sender, Lang.get("command.remove.not-found"), args[1]);
         }
     }
 
     private void handleList(CommandSender sender) {
         List<MirrorRegion> regions = mirrorManager.getRegions();
         if (regions.isEmpty()) {
-            Messages.warn(sender, "当前没有任何镜子");
+            Messages.warn(sender, Lang.get("command.list.empty"));
             return;
         }
-        Messages.info(sender, "共有 <#cee2f0><arg></#cee2f0> 面镜子:", regions.size());
+        Messages.info(sender, Lang.get("command.list.header"), regions.size());
         for (MirrorRegion region : regions) {
-            Messages.info(sender, " - <#cee2f0><arg1></#cee2f0> @ <arg2> (<arg3>，深度 <arg4>)",
+            Messages.info(sender, Lang.get("command.list.entry"),
                     region.id(), region.worldName(), region.face(), region.depth());
         }
     }

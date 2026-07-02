@@ -2,6 +2,7 @@ package com.puddingkc.Mirrora.listener;
 
 import com.puddingkc.Mirrora.manager.SelectionManager;
 import com.puddingkc.Mirrora.model.MirrorSelection;
+import com.puddingkc.Mirrora.util.Lang;
 import com.puddingkc.Mirrora.util.Messages;
 import com.puddingkc.Mirrora.util.ReflectionMath;
 import com.puddingkc.Mirrora.util.WandItemFactory;
@@ -40,21 +41,21 @@ public record MirrorWandListener(WandItemFactory wandItemFactory,
         event.setCancelled(true);
 
         if (!ReflectionMath.isHorizontal(face)) {
-            Messages.error(event.getPlayer(), "请点击垂直的墙面 (不能是地面或天花板)");
+            Messages.error(event.getPlayer(), Lang.get("wand-listener.invalid-face"));
             return;
         }
 
         MirrorSelection selection = selectionManager.getOrCreate(event.getPlayer().getUniqueId());
         if (action == Action.LEFT_CLICK_BLOCK) {
             selection.setPos1(block, face);
-            Messages.success(event.getPlayer(), "已选取第一个点: <#cee2f0><arg1></#cee2f0>，朝向: <#cee2f0><arg2></#cee2f0>", describe(block), face);
+            Messages.success(event.getPlayer(), Lang.get("wand-listener.point1"), describe(block), face);
         } else {
             selection.setPos2(block, face);
-            Messages.success(event.getPlayer(), "已选取第二个点: <#cee2f0><arg1></#cee2f0>，朝向: <#cee2f0><arg2></#cee2f0>", describe(block), face);
+            Messages.success(event.getPlayer(), Lang.get("wand-listener.point2"), describe(block), face);
         }
 
         if (selection.isComplete() && !selection.isFaceConsistent()) {
-            Messages.error(event.getPlayer(), "两个选点的朝向不一致，请确保两点都在同一面墙上");
+            Messages.error(event.getPlayer(), Lang.get("wand-listener.face-mismatch"));
         }
     }
 

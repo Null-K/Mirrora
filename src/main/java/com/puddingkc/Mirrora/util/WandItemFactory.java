@@ -15,25 +15,25 @@ import java.util.List;
 
 public final class WandItemFactory {
 
-    private static final Material WAND_MATERIAL = Material.BLAZE_ROD;
-
+    private final Material wandMaterial;
     private final NamespacedKey wandKey;
 
-    public WandItemFactory(Plugin plugin) {
+    public WandItemFactory(Plugin plugin, Material wandMaterial) {
+        this.wandMaterial = wandMaterial;
         this.wandKey = new NamespacedKey(plugin, "mirror_wand");
     }
 
     public ItemStack create() {
-        ItemStack item = new ItemStack(WAND_MATERIAL);
+        ItemStack item = new ItemStack(wandMaterial);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text("镜子选区工具", NamedTextColor.YELLOW)
+        meta.displayName(Component.text(Lang.get("wand-item.name"), NamedTextColor.YELLOW)
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 Component.empty(),
-                Component.text(" 左键: 选取第一个点", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
-                Component.text(" 右键: 选取第二个点", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                Component.text(Lang.get("wand-item.lore1"), NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                Component.text(Lang.get("wand-item.lore2"), NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
                 Component.empty(),
-                Component.text(" 两点必须点在同一朝向的墙面上", NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, false),
+                Component.text(Lang.get("wand-item.lore3"), NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, false),
                 Component.empty()
         ));
         meta.getPersistentDataContainer().set(wandKey, PersistentDataType.BOOLEAN, true);
@@ -42,7 +42,7 @@ public final class WandItemFactory {
     }
 
     public boolean isWand(ItemStack item) {
-        if (item == null || item.getType() != WAND_MATERIAL || !item.hasItemMeta()) {
+        if (item == null || item.getType() != wandMaterial || !item.hasItemMeta()) {
             return false;
         }
         ItemMeta meta = item.getItemMeta();

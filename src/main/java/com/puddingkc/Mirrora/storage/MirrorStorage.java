@@ -52,7 +52,7 @@ public class MirrorStorage {
 
                 regions.add(new MirrorRegion(id, worldName, face, planeCoordinate, minA, maxA, minY, maxY, depth));
             } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "加载镜子配置 '" + id + "' 失败，已跳过", e);
+                plugin.getLogger().log(Level.WARNING, "Failed to load mirror configuration '" + id + "'. Skipping.", e);
             }
         }
         return regions;
@@ -80,7 +80,7 @@ public class MirrorStorage {
             }
             config.save(file);
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "保存镜子配置失败", e);
+            plugin.getLogger().log(Level.SEVERE, "Failed to save mirror configuration.", e);
         }
     }
 }

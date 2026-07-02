@@ -1,0 +1,34 @@
+command:
+  usage: "Usage: <#cee2f0>/mirror [wand|create|remove|list]"
+  player-only: "This command can only be used by a player"
+  wand:
+    success: "You received the mirror selection wand, <#cee2f0>left-click</#cee2f0> to set point 1, <#cee2f0>right-click</#cee2f0> to set point 2"
+  create:
+    usage: "Usage: <#cee2f0>/mirror create <id> [depth]"
+    duplicate: "A mirror with this name already exists: <#cee2f0><arg>"
+    invalid-depth: "Depth must be a positive number"
+    depth-range: "Depth must be between <#cee2f0>0</#cee2f0> and <#cee2f0><arg></#cee2f0>"
+    no-selection: "Please select two points with the wand first (<#cee2f0>/mirror wand</#cee2f0>)"
+    face-mismatch: "The two selected points face different directions, please reselect"
+    different-world: "Creation failed, both points must be in the same world"
+    success: "Mirror <#cee2f0><arg></#cee2f0> created successfully"
+  remove:
+    usage: "Usage: <#cee2f0>/mirror remove <id>"
+    success: "Mirror <#cee2f0><arg></#cee2f0> removed"
+    not-found: "Mirror not found: <#cee2f0><arg>"
+  list:
+    empty: "There are no mirrors yet"
+    header: "There are <#cee2f0><arg></#cee2f0> mirror(s):"
+    entry: " - <#cee2f0><arg1></#cee2f0> @ <arg2> (<arg3>, depth <arg4>)"
+
+wand-listener:
+  invalid-face: "Please click a vertical wall (not the floor or ceiling)"
+  point1: "Point 1 set: <#cee2f0><arg1></#cee2f0>, facing: <#cee2f0><arg2></#cee2f0>"
+  point2: "Point 2 set: <#cee2f0><arg1></#cee2f0>, facing: <#cee2f0><arg2></#cee2f0>"
+  face-mismatch: "The two selected points face different directions, make sure both are on the same wall"
+
+wand-item:
+  name: "Mirror Selection Wand"
+  lore1: " Left-click: set point 1"
+  lore2: " Right-click: set point 2"
+  lore3: " Both points must be on walls facing the same direction"

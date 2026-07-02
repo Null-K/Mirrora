@@ -7,7 +7,7 @@ depend: [ "packetevents" ]
 
 commands:
   mirror:
-    description: 管理镜子区域
+    description: Manage mirror regions.
     permission: mirrora.admin
 
 permissions:

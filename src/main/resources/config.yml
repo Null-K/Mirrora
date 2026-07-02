@@ -1,0 +1,14 @@
+# 语言
+language: zh_cn
+
+mirror:
+  # 创建镜子时未指定深度时使用的默认值（格）
+  default-depth: 8.0
+  # 深度允许设置的最大值（格）
+  max-depth: 32.0
+  # 反射刷新间隔（tick），数值越小越流畅，但开销越大
+  tick-interval: 1
+
+wand:
+  # 选区工具使用的物品材质
+  material: BLAZE_ROD

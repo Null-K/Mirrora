@@ -57,16 +57,19 @@ public class MirrorManager {
 
     private final Map<String, Map<UUID, ReflectionState>> reflectionStates = new ConcurrentHashMap<>();
 
+    private final long tickInterval;
+
     private BukkitTask tickTask;
 
-    public MirrorManager(JavaPlugin plugin) {
+    public MirrorManager(JavaPlugin plugin, long tickInterval) {
         this.plugin = plugin;
         this.storage = new MirrorStorage(plugin);
+        this.tickInterval = tickInterval;
     }
 
     public void start() {
         regions.addAll(storage.load());
-        tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
+        tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, tickInterval, tickInterval);
     }
 
     public void stop() {
