@@ -73,6 +73,12 @@ public final class MirrorCommand implements CommandExecutor, TabCompleter {
         long tickInterval = Math.max(1, plugin.getConfig().getLong("mirror.tick-interval", 1));
         mirrorManager.setTickInterval(tickInterval);
 
+        boolean blockReflectionEnabled = plugin.getConfig().getBoolean("mirror.block-reflection.enabled", false);
+        long blockTickInterval = Math.max(1, plugin.getConfig().getLong("mirror.block-reflection.tick-interval", 20));
+        int maxReflectedBlocks = Math.max(1, plugin.getConfig().getInt("mirror.block-reflection.max-blocks", 2048));
+        int blockReflectionExpand = Math.max(0, plugin.getConfig().getInt("mirror.block-reflection.expand", 1));
+        mirrorManager.setBlockReflectionSettings(blockReflectionEnabled, blockTickInterval, maxReflectedBlocks, blockReflectionExpand);
+
         Material wandMaterial = Material.matchMaterial(plugin.getConfig().getString("wand.material", "BLAZE_ROD"));
         if (wandMaterial == null) {
             plugin.getLogger().warning("The configured wand.material is invalid. Falling back to BLAZE_ROD");

@@ -48,4 +48,55 @@ public record MirrorRegion(String id, String worldName, BlockFace face, double p
         }
         return normalDistance > 0 && normalDistance <= depth;
     }
+
+    /**
+     * 镜面前用于方块反射探测的方块坐标范围
+     *
+     * @param expand 在镜子矩形宽度/高度方向各自向外膨胀的格数
+     */
+    public BlockBounds blockReflectionBounds(int expand) {
+        int minABlock = (int) Math.floor(minA) - expand;
+        int maxABlock = (int) Math.ceil(maxA) - 1 + expand;
+        int minYBlock = (int) Math.floor(minY) - expand;
+        int maxYBlock = (int) Math.ceil(maxY) - 1 + expand;
+        int plane = (int) Math.floor(planeCoordinate);
+        int depthBlocks = (int) Math.ceil(depth);
+
+        int minX, maxX, minZ, maxZ;
+        switch (face) {
+            case NORTH -> {
+                minX = minABlock;
+                maxX = maxABlock;
+                minZ = plane - depthBlocks;
+                maxZ = plane - 1;
+            }
+            case SOUTH -> {
+                minX = minABlock;
+                maxX = maxABlock;
+                minZ = plane;
+                maxZ = plane + depthBlocks - 1;
+            }
+            case EAST -> {
+                minZ = minABlock;
+                maxZ = maxABlock;
+                minX = plane;
+                maxX = plane + depthBlocks - 1;
+            }
+            case WEST -> {
+                minZ = minABlock;
+                maxZ = maxABlock;
+                minX = plane - depthBlocks;
+                maxX = plane - 1;
+            }
+            default -> throw new IllegalStateException("Unsupported mirror face: " + face);
+        }
+
+        return new BlockBounds(minX, maxX, minYBlock, maxYBlock, minZ, maxZ);
+    }
+
+    public record BlockBounds(int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
+        public long blockCount() {
+            return (long) (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
+        }
+    }
 }

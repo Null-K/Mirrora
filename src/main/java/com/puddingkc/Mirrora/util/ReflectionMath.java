@@ -62,4 +62,61 @@ public final class ReflectionMath {
     public static float reflectPitch(float pitch) {
         return pitch;
     }
+
+    /**
+     * 计算方块相对镜面的镜像方块坐标
+     *
+     * @param mirrorFace      镜子所贴的墙面朝向
+     * @param planeCoordinate 镜面所在的平面坐标：NORTH/SOUTH 时为 Z 坐标，EAST/WEST 时为 X 坐标
+     * @param blockX          源方块 X
+     * @param blockY          源方块 Y
+     * @param blockZ          源方块 Z
+     * @return 镜像后的方块坐标 [x, y, z]
+     */
+    public static int[] reflectBlockPosition(BlockFace mirrorFace, double planeCoordinate, int blockX, int blockY, int blockZ) {
+        int plane = (int) Math.floor(planeCoordinate);
+        int x = blockX;
+        int z = blockZ;
+
+        if (mirrorFace == BlockFace.NORTH || mirrorFace == BlockFace.SOUTH) {
+            z = 2 * plane - blockZ - 1 - mirrorFace.getModZ();
+        } else if (mirrorFace == BlockFace.EAST || mirrorFace == BlockFace.WEST) {
+            x = 2 * plane - blockX - 1 - mirrorFace.getModX();
+        }
+
+        return new int[]{x, blockY, z};
+    }
+
+    /**
+     * 镜像一个有朝向的方块
+     * NORTH/SOUTH 镜面翻转 Z 分量，EAST/WEST 镜面翻转 X 分量；UP/DOWN 及与镜面轴向垂直的分量不变
+     *
+     * @param mirrorFace 镜子所贴的墙面朝向
+     * @param direction  源方块的朝向
+     * @return 镜像后的朝向，若无法匹配到合法的 BlockFace 则返回原朝向
+     */
+    public static BlockFace reflectBlockFace(BlockFace mirrorFace, BlockFace direction) {
+        if (direction == BlockFace.UP || direction == BlockFace.DOWN || direction == BlockFace.SELF) {
+            return direction;
+        }
+
+        int modX = direction.getModX();
+        int modY = direction.getModY();
+        int modZ = direction.getModZ();
+
+        if (mirrorFace == BlockFace.NORTH || mirrorFace == BlockFace.SOUTH) {
+            modZ = -modZ;
+        } else if (mirrorFace == BlockFace.EAST || mirrorFace == BlockFace.WEST) {
+            modX = -modX;
+        } else {
+            return direction;
+        }
+
+        for (BlockFace candidate : BlockFace.values()) {
+            if (candidate.getModX() == modX && candidate.getModY() == modY && candidate.getModZ() == modZ) {
+                return candidate;
+            }
+        }
+        return direction;
+    }
 }

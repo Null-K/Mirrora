@@ -14,6 +14,9 @@ import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.HumanoidArm;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockChange;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
@@ -29,6 +32,12 @@ import com.puddingkc.Mirrora.util.ProfileUtil;
 import com.puddingkc.Mirrora.util.ReflectionMath;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Rotatable;
 import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
@@ -38,6 +47,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,19 +67,34 @@ public class MirrorManager {
 
     private final Map<String, Map<UUID, ReflectionState>> reflectionStates = new ConcurrentHashMap<>();
 
+    private final Map<String, Map<Long, WrappedBlockState>> blockSnapshots = new ConcurrentHashMap<>();
+    private final Map<String, Set<UUID>> blockSyncedObservers = new ConcurrentHashMap<>();
+
     private long tickInterval;
 
-    private BukkitTask tickTask;
+    private boolean blockReflectionEnabled;
+    private long blockTickInterval;
+    private int maxReflectedBlocks;
+    private int blockReflectionExpand;
 
-    public MirrorManager(JavaPlugin plugin, long tickInterval) {
+    private BukkitTask tickTask;
+    private BukkitTask blockTickTask;
+
+    public MirrorManager(JavaPlugin plugin, long tickInterval, boolean blockReflectionEnabled,
+                          long blockTickInterval, int maxReflectedBlocks, int blockReflectionExpand) {
         this.plugin = plugin;
         this.storage = new MirrorStorage(plugin);
         this.tickInterval = tickInterval;
+        this.blockReflectionEnabled = blockReflectionEnabled;
+        this.blockTickInterval = blockTickInterval;
+        this.maxReflectedBlocks = maxReflectedBlocks;
+        this.blockReflectionExpand = blockReflectionExpand;
     }
 
     public void start() {
         regions.addAll(storage.load());
         tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, tickInterval, tickInterval);
+        restartBlockTickTask();
     }
 
     public void setTickInterval(long tickInterval) {
@@ -80,10 +105,36 @@ public class MirrorManager {
         }
     }
 
+    public void setBlockReflectionSettings(boolean enabled, long blockTickInterval, int maxReflectedBlocks, int blockReflectionExpand) {
+        this.blockReflectionEnabled = enabled;
+        this.blockTickInterval = blockTickInterval;
+        this.maxReflectedBlocks = maxReflectedBlocks;
+        this.blockReflectionExpand = blockReflectionExpand;
+        if (!enabled) {
+            revertAllBlockReflections();
+        }
+        restartBlockTickTask();
+    }
+
+    private void restartBlockTickTask() {
+        if (blockTickTask != null) {
+            blockTickTask.cancel();
+            blockTickTask = null;
+        }
+        if (blockReflectionEnabled) {
+            blockTickTask = plugin.getServer().getScheduler().runTaskTimer(
+                    plugin, this::blockTick, blockTickInterval, blockTickInterval);
+        }
+    }
+
     public void stop() {
         if (tickTask != null) {
             tickTask.cancel();
             tickTask = null;
+        }
+        if (blockTickTask != null) {
+            blockTickTask.cancel();
+            blockTickTask = null;
         }
 
         for (MirrorRegion region : regions) {
@@ -99,6 +150,30 @@ public class MirrorManager {
         }
         regionOccupants.clear();
         reflectionStates.clear();
+
+        revertAllBlockReflections();
+    }
+
+    private void revertAllBlockReflections() {
+        for (MirrorRegion region : regions) {
+            revertBlockReflectionsForRegion(region);
+        }
+        blockSnapshots.clear();
+        blockSyncedObservers.clear();
+    }
+
+    private void revertBlockReflectionsForRegion(MirrorRegion region) {
+        Set<UUID> synced = blockSyncedObservers.remove(region.id());
+        Map<Long, WrappedBlockState> snapshot = blockSnapshots.remove(region.id());
+        if (synced == null || snapshot == null || snapshot.isEmpty()) {
+            return;
+        }
+        for (UUID observerId : synced) {
+            Player observer = plugin.getServer().getPlayer(observerId);
+            if (observer != null && observer.isOnline()) {
+                sendRealBlocks(observer, region, snapshot.keySet());
+            }
+        }
     }
 
     public List<MirrorRegion> getRegions() {
@@ -141,6 +216,8 @@ public class MirrorManager {
             }
         }
         reflectionStates.remove(region.id());
+
+        revertBlockReflectionsForRegion(region);
 
         regions.remove(region);
         storage.save(regions);
@@ -490,4 +567,144 @@ public class MirrorManager {
     }
 
     private record ReflectedTransform(Vector3d position, float yaw, float pitch) { }
+
+    // 方块反射
+
+    private static long packBlockKey(int x, int y, int z) {
+        return (((long) x & 0x3FFFFFF) << 38) | (((long) y & 0xFFF) << 26) | ((long) z & 0x3FFFFFF);
+    }
+
+    private static Vector3i unpackBlockKey(long key) {
+        int x = (int) (key >> 38);
+        int y = (int) ((key >> 26) & 0xFFF);
+        if (y > 0x7FF) {
+            y -= 0x1000;
+        }
+        int z = (int) (key << 38 >> 38);
+        return new Vector3i(x, y, z);
+    }
+
+    private void blockTick() {
+        if (regions.isEmpty()) {
+            return;
+        }
+        for (MirrorRegion region : regions) {
+            blockTickRegion(region);
+        }
+    }
+
+    private void blockTickRegion(MirrorRegion region) {
+        Set<UUID> occupants = regionOccupants.getOrDefault(region.id(), Set.of());
+
+        if (occupants.isEmpty()) {
+            revertBlockReflectionsForRegion(region);
+            return;
+        }
+
+        MirrorRegion.BlockBounds bounds = region.blockReflectionBounds(blockReflectionExpand);
+        if (bounds.blockCount() > maxReflectedBlocks) {
+            return;
+        }
+
+        World world = plugin.getServer().getWorld(region.worldName());
+        if (world == null) {
+            return;
+        }
+
+        Map<Long, WrappedBlockState> newSnapshot = buildBlockSnapshot(region, world, bounds);
+        Map<Long, WrappedBlockState> oldSnapshot = blockSnapshots.getOrDefault(region.id(), Map.of());
+        Set<UUID> synced = blockSyncedObservers.computeIfAbsent(region.id(), k -> new HashSet<>());
+
+        Map<Long, WrappedBlockState> diff = new HashMap<>();
+        for (Map.Entry<Long, WrappedBlockState> entry : newSnapshot.entrySet()) {
+            WrappedBlockState old = oldSnapshot.get(entry.getKey());
+            if (old == null || old.getGlobalId() != entry.getValue().getGlobalId()) {
+                diff.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        for (UUID observerId : occupants) {
+            Player observer = plugin.getServer().getPlayer(observerId);
+            if (observer == null || !observer.isOnline() || !isClientSupported(observer)) {
+                continue;
+            }
+            if (synced.contains(observerId)) {
+                sendBlockSnapshot(observer, diff);
+            } else {
+                sendBlockSnapshot(observer, newSnapshot);
+                synced.add(observerId);
+            }
+        }
+
+        synced.removeIf(observerId -> {
+            if (occupants.contains(observerId)) {
+                return false;
+            }
+            Player observer = plugin.getServer().getPlayer(observerId);
+            if (observer != null && observer.isOnline()) {
+                sendRealBlocks(observer, region, oldSnapshot.keySet());
+            }
+            return true;
+        });
+
+        blockSnapshots.put(region.id(), newSnapshot);
+    }
+
+    private Map<Long, WrappedBlockState> buildBlockSnapshot(MirrorRegion region, World world, MirrorRegion.BlockBounds bounds) {
+        Map<Long, WrappedBlockState> snapshot = new HashMap<>();
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+            for (int y = bounds.minY(); y <= bounds.maxY(); y++) {
+                for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+                    Block source = world.getBlockAt(x, y, z);
+                    int[] target = ReflectionMath.reflectBlockPosition(region.face(), region.planeCoordinate(), x, y, z);
+                    long key = packBlockKey(target[0], target[1], target[2]);
+                    BlockData reflectedData = reflectBlockData(region.face(), source.getBlockData());
+                    snapshot.put(key, SpigotConversionUtil.fromBukkitBlockData(reflectedData));
+                }
+            }
+        }
+        return snapshot;
+    }
+
+    private BlockData reflectBlockData(BlockFace mirrorFace, BlockData source) {
+        BlockData reflected = source.clone();
+        if (reflected instanceof Directional directional) {
+            BlockFace reflectedFacing = ReflectionMath.reflectBlockFace(mirrorFace, directional.getFacing());
+            if (directional.getFaces().contains(reflectedFacing)) {
+                directional.setFacing(reflectedFacing);
+            }
+        }
+        if (reflected instanceof Rotatable rotatable) {
+            rotatable.setRotation(ReflectionMath.reflectBlockFace(mirrorFace, rotatable.getRotation()));
+        }
+        return reflected;
+    }
+
+    private void sendBlockSnapshot(Player observer, Map<Long, WrappedBlockState> blocks) {
+        if (blocks.isEmpty()) {
+            return;
+        }
+        PlayerManager playerManager = PacketEvents.getAPI().getPlayerManager();
+        for (Map.Entry<Long, WrappedBlockState> entry : blocks.entrySet()) {
+            Vector3i pos = unpackBlockKey(entry.getKey());
+            playerManager.sendPacket(observer, new WrapperPlayServerBlockChange(pos, entry.getValue()));
+        }
+    }
+
+    private void sendRealBlocks(Player observer, MirrorRegion region, Set<Long> keys) {
+        if (keys.isEmpty()) {
+            return;
+        }
+        World world = plugin.getServer().getWorld(region.worldName());
+        if (world == null) {
+            return;
+        }
+        PlayerManager playerManager = PacketEvents.getAPI().getPlayerManager();
+        for (long key : keys) {
+            Vector3i pos = unpackBlockKey(key);
+            Block realBlock = world.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+            WrappedBlockState realState = SpigotConversionUtil.fromBukkitBlockData(realBlock.getBlockData());
+            playerManager.sendPacket(observer, new WrapperPlayServerBlockChange(pos, realState));
+        }
+    }
 }

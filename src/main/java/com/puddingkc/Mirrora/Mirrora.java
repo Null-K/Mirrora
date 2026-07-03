@@ -23,13 +23,18 @@ public class Mirrora extends JavaPlugin {
         double maxDepth = getConfig().getDouble("mirror.max-depth", 32.0);
         long tickInterval = Math.max(1, getConfig().getLong("mirror.tick-interval", 1));
 
+        boolean blockReflectionEnabled = getConfig().getBoolean("mirror.block-reflection.enabled", false);
+        long blockTickInterval = Math.max(1, getConfig().getLong("mirror.block-reflection.tick-interval", 20));
+        int maxReflectedBlocks = Math.max(1, getConfig().getInt("mirror.block-reflection.max-blocks", 2048));
+        int blockReflectionExpand = Math.max(0, getConfig().getInt("mirror.block-reflection.expand", 1));
+
         Material wandMaterial = Material.matchMaterial(getConfig().getString("wand.material", "BLAZE_ROD"));
         if (wandMaterial == null) {
             getLogger().warning("The configured wand.material is invalid. Falling back to BLAZE_ROD");
             wandMaterial = Material.BLAZE_ROD;
         }
 
-        mirrorManager = new MirrorManager(this, tickInterval);
+        mirrorManager = new MirrorManager(this, tickInterval, blockReflectionEnabled, blockTickInterval, maxReflectedBlocks, blockReflectionExpand);
         mirrorManager.start();
 
         SelectionManager selectionManager = new SelectionManager();

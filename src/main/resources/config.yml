@@ -15,6 +15,23 @@ mirror:
   # Reflection update interval (in ticks). Lower values provide smoother reflections but increase performance cost.
   tick-interval: 1
 
+  block-reflection:
+    # 是否启用方块反射（镜面前方块范围与镜子范围/深度一致）
+    # Whether to reflect blocks in front of the mirror (same rectangle/depth as the mirror itself)
+    enabled: false
+
+    # 方块反射刷新间隔（tick），建议远大于 mirror.tick-interval，因为方块变化频率低
+    # Block reflection refresh interval (in ticks). Should be much larger than mirror.tick-interval since blocks change less often.
+    tick-interval: 20
+
+    # 单个镜子允许反射的最大方块数量，超过该数量的镜子将跳过方块反射
+    # Maximum number of blocks a single mirror is allowed to reflect. Mirrors exceeding this are skipped for block reflection.
+    max-blocks: 2048
+
+    # 方块探测范围在镜子宽度/高度方向各自向外膨胀的格数（不影响深度）
+    # Number of blocks to expand the detection rectangle outward on the width/height axes (depth is unaffected)
+    expand: 1
+
 wand:
   # 选区工具使用的物品材质
   # Material used for the region selection wand
