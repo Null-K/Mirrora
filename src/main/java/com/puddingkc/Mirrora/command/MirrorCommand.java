@@ -1,5 +1,7 @@
 package com.puddingkc.Mirrora.command;
 
+import com.puddingkc.Mirrora.manager.BlockMirrorRegistry;
+import com.puddingkc.Mirrora.manager.FurnitureMirrorRegistry;
 import com.puddingkc.Mirrora.manager.MirrorManager;
 import com.puddingkc.Mirrora.manager.SelectionManager;
 import com.puddingkc.Mirrora.model.MirrorRegion;
@@ -28,18 +30,23 @@ public final class MirrorCommand implements CommandExecutor, TabCompleter {
     private final MirrorManager mirrorManager;
     private final SelectionManager selectionManager;
     private final WandItemFactory wandItemFactory;
+    private final FurnitureMirrorRegistry furnitureMirrorRegistry;
+    private final BlockMirrorRegistry blockMirrorRegistry;
 
     private double defaultDepth;
     private double maxDepth;
 
     public MirrorCommand(JavaPlugin plugin, MirrorManager mirrorManager, SelectionManager selectionManager,
-                          WandItemFactory wandItemFactory, double defaultDepth, double maxDepth) {
+                          WandItemFactory wandItemFactory, double defaultDepth, double maxDepth,
+                          FurnitureMirrorRegistry furnitureMirrorRegistry, BlockMirrorRegistry blockMirrorRegistry) {
         this.plugin = plugin;
         this.mirrorManager = mirrorManager;
         this.selectionManager = selectionManager;
         this.wandItemFactory = wandItemFactory;
         this.defaultDepth = defaultDepth;
         this.maxDepth = maxDepth;
+        this.furnitureMirrorRegistry = furnitureMirrorRegistry;
+        this.blockMirrorRegistry = blockMirrorRegistry;
     }
 
     @Override
@@ -85,6 +92,13 @@ public final class MirrorCommand implements CommandExecutor, TabCompleter {
             wandMaterial = Material.BLAZE_ROD;
         }
         wandItemFactory.setWandMaterial(wandMaterial);
+
+        if (furnitureMirrorRegistry != null) {
+            furnitureMirrorRegistry.load();
+        }
+        if (blockMirrorRegistry != null) {
+            blockMirrorRegistry.load();
+        }
 
         Messages.success(sender, Lang.get("command.reload.success"));
     }

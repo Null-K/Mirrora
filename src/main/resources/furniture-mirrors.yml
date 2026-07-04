@@ -1,0 +1,35 @@
+# CraftEngine
+# 家具镜子配置
+# Furniture mirror configuration
+furniture-mirrors:
+  example:mirror_furniture:
+    # 镜子宽度（格），沿家具朝向的水平方向展开
+    # Mirror width (in blocks), measured horizontally along the furniture's facing wall
+    width: 1.0
+
+    # 镜子高度（格），以基准坐标为底部起点向上展开
+    # Mirror height (in blocks), extending upward starting from the anchor position
+    height: 2.0
+
+    # 镜子深度（格）
+    # Mirror depth (in blocks)
+    depth: 8.0
+
+    # 镜子在基准坐标的基础上向下额外拓展的格数（不影响向上的高度）
+    # Number of extra blocks the mirror extends downward below the anchor position (does not affect the upward height)
+    extend-down: 0.0
+
+    # 创建镜子时使用的基准坐标偏移量，基于家具的朝向（面向房间内部的方向）计算，支持小数
+    # forward：沿家具朝向的前后偏移，正值为前方，负值为后方
+    # right：沿家具朝向的左右偏移（面向前方时的右手方向），正值为右侧，负值为左侧
+    # y：垂直方向偏移，正值向上，负值向下
+    #
+    # Coordinate offset applied when computing the mirror's anchor position, relative to the furniture's
+    # facing direction (the direction it faces into the room). Decimal values are supported.
+    # forward: offset along the facing direction, positive = in front, negative = behind
+    # right: offset perpendicular to the facing direction (right-hand side when facing forward), positive = right, negative = left
+    # y: vertical offset, positive = up, negative = down
+    offset:
+      forward: 0.0
+      right: 0.0
+      y: 0.0

@@ -1,10 +1,15 @@
 package com.puddingkc.Mirrora;
 
 import com.puddingkc.Mirrora.command.MirrorCommand;
+import com.puddingkc.Mirrora.listener.CraftEngineBlockListener;
+import com.puddingkc.Mirrora.listener.CraftEngineFurnitureListener;
 import com.puddingkc.Mirrora.listener.MirrorAnimationListener;
 import com.puddingkc.Mirrora.listener.MirrorWandListener;
+import com.puddingkc.Mirrora.manager.BlockMirrorRegistry;
+import com.puddingkc.Mirrora.manager.FurnitureMirrorRegistry;
 import com.puddingkc.Mirrora.manager.MirrorManager;
 import com.puddingkc.Mirrora.manager.SelectionManager;
+import com.puddingkc.Mirrora.storage.FurnitureMirrorLinkStorage;
 import com.puddingkc.Mirrora.util.Lang;
 import com.puddingkc.Mirrora.util.WandItemFactory;
 import org.bukkit.Material;
@@ -14,6 +19,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class Mirrora extends JavaPlugin {
 
     private MirrorManager mirrorManager;
+    private FurnitureMirrorRegistry furnitureMirrorRegistry;
+    private BlockMirrorRegistry blockMirrorRegistry;
 
     @Override
     public void onEnable() {
@@ -40,7 +47,17 @@ public class Mirrora extends JavaPlugin {
         SelectionManager selectionManager = new SelectionManager();
         WandItemFactory wandItemFactory = new WandItemFactory(this, wandMaterial);
 
-        MirrorCommand mirrorCommand = new MirrorCommand(this, mirrorManager, selectionManager, wandItemFactory, defaultDepth, maxDepth);
+        boolean craftEngineEnabled = getServer().getPluginManager().isPluginEnabled("CraftEngine");
+        if (craftEngineEnabled) {
+            furnitureMirrorRegistry = new FurnitureMirrorRegistry(this);
+            furnitureMirrorRegistry.load();
+
+            blockMirrorRegistry = new BlockMirrorRegistry(this);
+            blockMirrorRegistry.load();
+        }
+
+        MirrorCommand mirrorCommand = new MirrorCommand(this, mirrorManager, selectionManager, wandItemFactory,
+                defaultDepth, maxDepth, furnitureMirrorRegistry, blockMirrorRegistry);
         var command = getCommand("mirror");
         if (command != null) {
             command.setExecutor(mirrorCommand);
@@ -51,6 +68,20 @@ public class Mirrora extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new MirrorAnimationListener(mirrorManager), this);
         getServer().getPluginManager().registerEvents(new MirrorWandListener(wandItemFactory, selectionManager), this);
+
+        if (craftEngineEnabled) {
+            FurnitureMirrorLinkStorage furnitureLinkStorage = new FurnitureMirrorLinkStorage(this);
+            furnitureLinkStorage.load();
+            getServer().getPluginManager().registerEvents(
+                    new CraftEngineFurnitureListener(mirrorManager, furnitureMirrorRegistry, furnitureLinkStorage), this);
+
+            FurnitureMirrorLinkStorage blockLinkStorage = new FurnitureMirrorLinkStorage(this, "block-mirror-links.yml", "links");
+            blockLinkStorage.load();
+            getServer().getPluginManager().registerEvents(
+                    new CraftEngineBlockListener(mirrorManager, blockMirrorRegistry, blockLinkStorage), this);
+
+            getLogger().info("Detected CraftEngine, mirror furniture/block support enabled.");
+        }
 
         getLogger().info("Author: PuddingKC");
     }

@@ -4,6 +4,7 @@ version: 1.2.1
 api-version: "1.21"
 author: PuddingKC
 depend: [ "packetevents" ]
+softdepend: [ "CraftEngine" ]
 
 commands:
   mirror:
@@ -12,4 +13,6 @@ commands:
 
 permissions:
   mirrora.admin:
+    default: op
+  mirrora.autoCreate:
     default: op

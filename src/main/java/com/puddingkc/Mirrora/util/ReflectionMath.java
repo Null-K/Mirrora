@@ -64,6 +64,44 @@ public final class ReflectionMath {
     }
 
     /**
+     * 将偏航角吸附到最接近的水平朝向
+     *
+     * @param yaw 偏航角
+     * @return NORTH/SOUTH/EAST/WEST 之一
+     */
+    public static BlockFace yawToFace(float yaw) {
+        float normalized = yaw % 360f;
+        if (normalized < 0) {
+            normalized += 360f;
+        }
+        if (normalized >= 315f || normalized < 45f) {
+            return BlockFace.SOUTH;
+        } else if (normalized < 135f) {
+            return BlockFace.WEST;
+        } else if (normalized < 225f) {
+            return BlockFace.NORTH;
+        } else {
+            return BlockFace.EAST;
+        }
+    }
+
+    /**
+     * 给定镜面朝向（法线方向，指向房间内部），计算其右手方向（面向法线方向时的右侧）
+     *
+     * @param face 镜面朝向
+     * @return 右手方向对应的 BlockFace
+     */
+    public static BlockFace rightOf(BlockFace face) {
+        return switch (face) {
+            case SOUTH -> BlockFace.WEST;
+            case WEST -> BlockFace.NORTH;
+            case NORTH -> BlockFace.EAST;
+            case EAST -> BlockFace.SOUTH;
+            default -> face;
+        };
+    }
+
+    /**
      * 计算方块相对镜面的镜像方块坐标
      *
      * @param mirrorFace      镜子所贴的墙面朝向
